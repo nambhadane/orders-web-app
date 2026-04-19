@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Orders App</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body {
+            background: #4dabf7;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .container {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            padding: 40px;
+            max-width: 600px;
+        }
+        .form-control {
+            border-radius: 10px;
+            border: 2px solid #e9ecef;
+            transition: border-color 0.3s;
+        }
+        .form-control:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+        }
+        .btn-primary {
+            background: #4dabf7;
+            border: none;
+            border-radius: 10px;
+            padding: 12px 30px;
+            font-weight: 600;
+            transition: transform 0.2s;
+            color: white;
+        }
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            background: #3a9bdc;
+        }
+        .btn-secondary {
+            border-radius: 10px;
+            padding: 12px 30px;
+            font-weight: 600;
+        }
+        h2 {
+            color: #333;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+        .order-item {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 10px;
+            border-left: 5px solid #667eea;
+        }
+        .alert {
+            border-radius: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2><i class="fas fa-shopping-cart"></i> Create Order</h2>
+        <form id="orderForm">
+            <div class="mb-3">
+                <label for="name" class="form-label"><i class="fas fa-user"></i> Name</label>
+                <input type="text" class="form-control" id="name" placeholder="Enter your name" required>
+            </div>
+            <div class="mb-3">
+                <label for="product" class="form-label"><i class="fas fa-box"></i> Product</label>
+                <input type="text" class="form-control" id="product" placeholder="Enter product name" required>
+            </div>
+            <div class="mb-3">
+                <label for="quantity" class="form-label"><i class="fas fa-hashtag"></i> Quantity</label>
+                <input type="number" class="form-control" id="quantity" placeholder="Enter quantity" min="1" required>
+            </div>
+            <button type="submit" class="btn btn-primary w-100"><i class="fas fa-plus"></i> Create Order</button>
+        </form>
+
+        <hr class="my-5">
+
+        <h2><i class="fas fa-list"></i> All Orders</h2>
+        <button onclick="getOrders()" class="btn btn-secondary mb-3"><i class="fas fa-sync"></i> Load Orders</button>
+        <div id="ordersContainer"></div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        const API_URL = "https://1oey8qwotj.execute-api.us-east-1.amazonaws.com/orders";
+
+        // Create Order (POST)
+        function createOrder() {
+            const name = document.getElementById("name").value;
+            const product = document.getElementById("product").value;
+            const quantity = document.getElementById("quantity").value;
+
+            fetch(API_URL, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({ name, product, quantity })
+            })
+            .then(res => res.json())
+            .then(data => {
+                showAlert("Order Created Successfully!", "success");
+                document.getElementById("orderForm").reset();
+            })
+            .catch(err => {
+                console.error(err);
+                showAlert("Error creating order. Please try again.", "danger");
+            });
+        }
+
+        // Get Orders (GET)
+        function getOrders() {
+            fetch(API_URL)
+            .then(res => res.json())
+            .then(data => {
+                const container = document.getElementById("ordersContainer");
+                container.innerHTML = "";
+
+                if (data.length === 0) {
+                    container.innerHTML = '<div class="alert alert-info"><i class="fas fa-info-circle"></i> No orders found.</div>';
+                    return;
+                }
+
+                data.forEach(order => {
+                    const orderDiv = document.createElement("div");
+                    orderDiv.className = "order-item";
+                    orderDiv.innerHTML = `
+                        <strong>${order.name}</strong> ordered <strong>${order.product}</strong> (Quantity: ${order.quantity})
+                    `;
+                    container.appendChild(orderDiv);
+                });
+            })
+            .catch(err => {
+                console.error(err);
+                showAlert("Error loading orders. Please try again.", "danger");
+            });
+        }
+
+        // Show alert
+        function showAlert(message, type) {
+            const alertDiv = document.createElement("div");
+            alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
+            alertDiv.innerHTML = `
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            `;
+            document.querySelector(".container").prepend(alertDiv);
+            setTimeout(() => alertDiv.remove(), 5000);
+        }
+
+        // Form submission
+        document.getElementById("orderForm").addEventListener("submit", function(e) {
+            e.preventDefault();
+            createOrder();
+        });
+    </script>
+</body>
+</html>
